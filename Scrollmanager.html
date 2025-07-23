@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Scrollbar Markers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .content {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .panel h2 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            font-size: 1.8rem;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .control-group {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff8c00, #ffd700);
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            border: none;
+            margin-top: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(45deg, #ff9d1f, #ffe033);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .scroll-container {
+            height: 600px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .scroll-content {
+            padding: 25px;
+            height: 3000px;
+            position: relative;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid #ffd700;
+        }
+        
+        .section h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            font-size: 1.4rem;
+        }
+        
+        .section p {
+            line-height: 1.7;
+            margin-bottom: 15px;
+            color: #e0e0e0;
+        }
+        
+        .marker-preview {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .marker-sample {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Custom scrollbar styling */
+        .scroll-container::-webkit-scrollbar {
+            width: 16px;
+        }
+        
+        .scroll-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            border: 3px solid rgba(0, 0, 0, 0);
+            background-clip: padding-box;
+        }
+        
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Marker container - will be created by JavaScript */
+        .markers-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 16px;
+            pointer-events: none;
+        }
+        
+        .marker {
+            position: absolute;
+            right: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 1000;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .marker:hover {
+            transform: translateY(-50%) scale(1.2);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.7);
+        }
+        
+        .info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .info h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+        
+        .info ul {
+            padding-left: 25px;
+        }
+        
+        .info li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .highlight {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .panel {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Custom Scrollbar Markers</h1>
+            <p class="subtitle">This implementation shows how to add custom markers to any scrollbar. Markers are positioned relative to scrollable content and execute custom functions when clicked. Try adding markers to the container below or to the main window scrollbar.</p>
+        </header>
+        
+        <div class="content">
+            <div class="panel">
+                <h2>Controls</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <h3>Container Markers</h3>
+                        <label for="container-position">Position (px from top):</label>
+                        <input type="number" id="container-position" min="0" max="3000" value="500">
+                        
+                        <label for="container-color">Marker Color:</label>
+                        <select id="container-color">
+                            <option value="#FF5252">Red</option>
+                            <option value="#4CAF50">Green</option>
+                            <option value="#2196F3" selected>Blue</option>
+                            <option value="#FFD740">Yellow</option>
+                            <option value="#AB47BC">Purple</option>
+                        </select>
+                        
+                        <label for="container-label">Marker Label:</label>
+                        <input type="text" id="container-label" value="1" maxlength="2">
+                        
+                        <button id="add-container-marker">Add to Container</button>
+                        <button id="clear-container-markers">Clear Container Markers</button>
+                    </div>
+                    
+                    <div class="control-group">
+                        <h3>Window Markers</h3>
+                        <label for="window-position">Position (px from top):</label>
+                        <input type="number" id="window-position" min="0" max="3000" value="1200">
+                        
+                        <label for="window-color">Marker Color:</label>
+                        <select id="window-color">
+                            <option value="#FF5252">Red</option>
+                            <option value="#4CAF50">Green</option>
+                            <option value="#2196F3">Blue</option>
+                            <option value="#FFD740" selected>Yellow</option>
+                            <option value="#AB47BC">Purple</option>
+                        </select>
+                        
+                        <label for="window-label">Marker Label:</label>
+                        <input type="text" id="window-label" value="A" maxlength="2">
+                        
+                        <button id="add-window-marker">Add to Window</button>
+                        <button id="clear-window-markers">Clear Window Markers</button>
+                    </div>
+                    
+                    <div class="control-group">
+                        <h3>Marker Preview</h3>
+                        <div class="marker-preview">
+                            <div class="marker-sample" style="background-color: #FF5252;">1</div>
+                            <div class="marker-sample" style="background-color: #4CAF50;">2</div>
+                            <div class="marker-sample" style="background-color: #2196F3;">3</div>
+                            <div class="marker-sample" style="background-color: #FFD740;">A</div>
+                            <div class="marker-sample" style="background-color: #AB47BC;">B</div>
+                        </div>
+                        <p>Click on any marker in the scrollbar to jump to that position</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>Scroll Container</h2>
+                <div class="scroll-container" id="scrollable-container">
+                    <div class="scroll-content" id="scrollable-content">
+                        <div class="section">
+                            <h3>Section 1: Introduction</h3>
+                            <p>This is a scrollable container. You can add custom markers to its scrollbar using the controls on the left. Each marker represents a specific position within the container.</p>
+                            <p>When you click on a marker, the container will automatically scroll to that position. Try adding markers to different positions and clicking on them.</p>
+                        </div>
+                        
+                        <div class="section">
+                            <h3>Section 2: Technical Implementation</h3>
+                            <p>The scrollbar markers are implemented by:</p>
+                            <ol>
+                                <li>Creating a container positioned over the scrollbar</li>
+                                <li>Calculating marker positions based on scroll height</li>
+                                <li>Adding click event handlers to each marker</li>
+                                <li>Handling window resize and scroll events</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="section">
+                            <h3>Section 3: Use Cases</h3>
+                            <p>Custom scrollbar markers are useful for:</p>
+                            <ul>
+                                <li>Document navigation</li>
+                                <li>Video timeline markers</li>
+                                <li>Code editor breakpoints</li>
+                                <li>Highlighting important content locations</li>
+                                <li>Creating interactive tutorials</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="section">
+                            <h3>Section 4: Customization</h3>
+                            <p>Each marker can be customized with:</p>
+                            <ul>
+                                <li>Different colors</li>
+                                <li>Text labels</li>
+                                <li>Custom click handlers</li>
+                                <li>Unique identifiers</li>
+                                <li>Size and shape variations</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="section">
+                            <h3>Section 5: Advanced Features</h3>
+                            <p>For more advanced implementations, you could:</p>
+                            <ul>
+                                <li>Add tooltips to markers</li>
+                                <li>Create marker groups</li>
+                                <li>Implement drag-and-drop positioning</li>
+                                <li>Add animation effects</li>
+                                <li>Persist markers between sessions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info">
+            <h3>How It Works</h3>
+            <ul>
+                <li>Markers are positioned absolutely relative to the scrollbar container</li>
+                <li>The marker position is calculated as: <span class="highlight">(position / scrollHeight) * 100%</span></li>
+                <li>Clicking a marker scrolls to the position with smooth animation</li>
+                <li>Markers automatically reposition when the window is resized</li>
+                <li>The implementation handles both window and element scrollbars</li>
+                <li>Custom functions can be executed when markers are clicked</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        class ScrollMarkerManager {
+            constructor(targetElement) {
+                this.targetElement = targetElement;
+                this.markers = [];
+                this.markersContainer = null;
+                this.isWindow = targetElement === window;
+                this.init();
+            }
+            
+            init() {
+                // Create markers container
+                this.createMarkersContainer();
+                
+                // Set up event listeners
+                this.setupEventListeners();
+            }
+            
+            createMarkersContainer() {
+                if (this.markersContainer) return;
+                
+                this.markersContainer = document.createElement('div');
+                this.markersContainer.className = 'markers-container';
+                
+                if (this.isWindow) {
+                    document.body.appendChild(this.markersContainer);
+                    this.positionWindowContainer();
+                } else {
+                    this.targetElement.appendChild(this.markersContainer);
+                    this.positionElementContainer();
+                }
+            }
+            
+            positionWindowContainer() {
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+                this.markersContainer.style.width = `${scrollbarWidth}px`;
+                this.markersContainer.style.right = '0';
+            }
+            
+            positionElementContainer() {
+                const scrollbarWidth = this.targetElement.offsetWidth - this.targetElement.clientWidth;
+                this.markersContainer.style.width = `${scrollbarWidth}px`;
+            }
+            
+            setupEventListeners() {
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    if (this.isWindow) {
+                        this.positionWindowContainer();
+                    } else {
+                        this.positionElementContainer();
+                    }
+                    this.updateMarkerPositions();
+                });
+                
+                // Handle scroll events to update marker positions
+                const scrollElement = this.isWindow ? window : this.targetElement;
+                scrollElement.addEventListener('scroll', () => {
+                    this.updateMarkerPositions();
+                });
+            }
+            
+            addMarker(position, onClick, color = '#2196F3', label = '') {
+                const marker = document.createElement('div');
+                marker.className = 'marker';
+                marker.style.backgroundColor = color;
+                marker.textContent = label;
+                
+                // Calculate initial position
+                this.updateMarkerPosition(marker, position);
+                
+                // Add click handler
+                marker.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.scrollToPosition(position);
+                    
+                    // Execute custom function
+                    if (onClick && typeof onClick === 'function') {
+                        onClick(position, marker);
+                    }
+                });
+                
+                this.markersContainer.appendChild(marker);
+                this.markers.push({ element: marker, position });
+                
+                return marker;
+            }
+            
+            updateMarkerPosition(marker, position) {
+                const scrollHeight = this.isWindow ? 
+                    document.documentElement.scrollHeight : 
+                    this.targetElement.scrollHeight;
+                
+                const topPercentage = (position / scrollHeight) * 100;
+                marker.style.top = `${topPercentage}%`;
+            }
+            
+            updateMarkerPositions() {
+                this.markers.forEach(markerData => {
+                    this.updateMarkerPosition(markerData.element, markerData.position);
+                });
+            }
+            
+            scrollToPosition(position) {
+                if (this.isWindow) {
+                    window.scrollTo({
+                        top: position,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    this.targetElement.scrollTo({
+                        top: position,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+            
+            clearMarkers() {
+                while (this.markersContainer.firstChild) {
+                    this.markersContainer.firstChild.remove();
+                }
+                this.markers = [];
+            }
+            
+            destroy() {
+                if (this.markersContainer) {
+                    this.markersContainer.remove();
+                    this.markersContainer = null;
+                }
+                this.markers = [];
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get DOM elements
+            const container = document.getElementById('scrollable-container');
+            const addContainerBtn = document.getElementById('add-container-marker');
+            const clearContainerBtn = document.getElementById('clear-container-markers');
+            const addWindowBtn = document.getElementById('add-window-marker');
+            const clearWindowBtn = document.getElementById('clear-window-markers');
+            
+            // Create marker managers
+            const containerMarkerManager = new ScrollMarkerManager(container);
+            const windowMarkerManager = new ScrollMarkerManager(window);
+            
+            // Custom click handler function
+            function handleMarkerClick(position, marker) {
+                console.log(`Marker clicked at position: ${position}px`);
+                marker.style.transform = 'translateY(-50%) scale(1.5)';
+                setTimeout(() => {
+                    marker.style.transform = 'translateY(-50%)';
+                }, 300);
+            }
+            
+            // Container marker button
+            addContainerBtn.addEventListener('click', () => {
+                const position = parseInt(document.getElementById('container-position').value);
+                const color = document.getElementById('container-color').value;
+                const label = document.getElementById('container-label').value || '';
+                
+                containerMarkerManager.addMarker(
+                    position, 
+                    handleMarkerClick, 
+                    color, 
+                    label
+                );
+            });
+            
+            // Clear container markers button
+            clearContainerBtn.addEventListener('click', () => {
+                containerMarkerManager.clearMarkers();
+            });
+            
+            // Window marker button
+            addWindowBtn.addEventListener('click', () => {
+                const position = parseInt(document.getElementById('window-position').value);
+                const color = document.getElementById('window-color').value;
+                const label = document.getElementById('window-label').value || '';
+                
+                windowMarkerManager.addMarker(
+                    position, 
+                    handleMarkerClick, 
+                    color, 
+                    label
+                );
+            });
+            
+            // Clear window markers button
+            clearWindowBtn.addEventListener('click', () => {
+                windowMarkerManager.clearMarkers();
+            });
+            
+            // Add some demo markers
+            containerMarkerManager.addMarker(300, handleMarkerClick, '#4CAF50', '1');
+            containerMarkerManager.addMarker(1200, handleMarkerClick, '#FFD740', '2');
+            windowMarkerManager.addMarker(800, handleMarkerClick, '#AB47BC', 'A');
+        });
+    </script>
+</body>
+</html>
